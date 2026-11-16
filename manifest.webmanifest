@@ -1,0 +1,22 @@
+{
+ "name": "Tirupati Ambulance (SVIMS Unit) Billing",
+ "short_name": "SVIMS Billing",
+ "start_url": "./index.html",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#12263a",
+ "theme_color": "#12263a",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}

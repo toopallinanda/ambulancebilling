@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#12263a"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<title>Tirupati Ambulance (SVIMS Unit) Billing</title>
+<style>
+:root{--ink:#12263a;--red:#c8102e;--bg:#f3f5f8;--line:#d5dbe3;--ok:#1b7f4b}
+*{box-sizing:border-box}body{margin:0;font:14px/1.4 system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--ink);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+header h1{font-size:17px;margin:0}header a,header button{color:#fff;font-size:13px}
+header button{background:var(--red);border:0;padding:6px 10px;border-radius:4px;cursor:pointer}
+nav{display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px 0;background:#e3e8ee}
+nav button{border:0;background:#cfd7e1;padding:8px 12px;border-radius:6px 6px 0 0;cursor:pointer;color:var(--ink);font-weight:600}
+nav button.on{background:#fff;color:var(--red)}
+main{padding:14px;max-width:1150px;margin:auto}.tab{display:none;background:#fff;padding:14px;border:1px solid var(--line);border-radius:0 6px 6px 6px}.tab.on{display:block}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+label{display:block;font-size:12px;font-weight:600;margin-bottom:2px}
+input,select,textarea{width:100%;padding:7px;border:1px solid var(--line);border-radius:4px;font:inherit;background:#fff}
+input[readonly]{background:#eef1f5}h3{margin:16px 0 8px;font-size:15px;border-bottom:2px solid var(--line);padding-bottom:4px}
+button.b{background:var(--ink);color:#fff;border:0;padding:9px 14px;border-radius:4px;cursor:pointer;font-weight:600;margin:4px 4px 4px 0}
+button.r{background:var(--red)}button.s{padding:4px 8px;font-size:12px;margin:1px}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid var(--line);padding:5px 7px;text-align:left}th{background:#eef1f5}
+.wrap{overflow-x:auto}.box{background:#f8fafc;border:1px solid var(--line);padding:10px;border-radius:6px;margin-top:10px}
+.tot{font-size:15px}.tot b{color:var(--red)}.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px}
+.kpi div{border:1px solid var(--line);border-radius:6px;padding:10px}.kpi b{display:block;font-size:20px}
+.pay{display:grid;grid-template-columns:1.2fr 1fr 1.5fr auto;gap:6px;margin-bottom:5px}
+#msg{font-size:12px;opacity:.85}#login{position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;z-index:99}#login div{background:#fff;padding:24px;border-radius:8px;width:min(340px,90vw)}#login h2{margin:0 0 12px;font-size:17px}#le{color:var(--red);min-height:18px;font-size:13px}@media(max-width:600px){input,select,textarea{font-size:16px}.pay{grid-template-columns:1fr 1fr}.kpi{grid-template-columns:1fr 1fr}}.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.tile{background:#fff;border:2px solid var(--ink);border-radius:10px;padding:22px 14px;cursor:pointer;text-align:center;font:inherit;color:var(--ink)}.tile:hover{background:var(--ink);color:#fff}.tile span{display:block;font-size:34px}.tile b{display:block;font-size:17px;margin:6px 0 2px}.tile small{opacity:.8}
+</style></head><body>
+<div id="login"><div><h2>Tirupati Ambulance (SVIMS Unit)<br>Staff sign in</h2><form id="lf" onsubmit="doLogin();return false"><label>Username</label><input id="lu" name="username" autocomplete="username" autocapitalize="none"><label style="margin-top:8px">Password</label><input id="lp" name="password" type="password" autocomplete="current-password"><p id="le"></p><button class="b r" type="submit" style="width:100%">Sign in</button><p id="sto" style="font-size:11px;opacity:.7;margin:10px 0 0"></p></form></div></div>
+<header><h1 style="cursor:pointer" title="Home" onclick="show(9)">TIRUPATI AMBULANCE (SVIMS UNIT) · Billing</h1>
+<div><button id="rp" style="display:none" onclick="if(LASTPRINT)openPrint(LASTPRINT[0],LASTPRINT[1])">Print again</button> <b id="who"></b> <button onclick="logout()">Log out</button> <span id="msg">Ready</span> <a id="sh1" target="_blank" href="https://docs.google.com/spreadsheets/d/1EFmRYk7dq7t3tWWQyPgw9n0gMot7Iar9_W4JBhX2pNg/edit">Open Google Sheet</a> <button onclick="pull()">Refresh Cloud</button></div></header>
+<nav id="nav"></nav>
+<main>
+<section class="tab on" id="t0">
+<div class="g">
+<div><label>Date</label><input type="date" id="date"></div>
+<div><label>Bill / Serial No.</label><input id="serial" readonly></div>
+<div><label>Mobile number * (10 digits)</label><input id="phone" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="10-digit mobile" autocomplete="off"></div>
+<div><label>Patient / Customer *</label><input id="customer"></div>
+<div id="profBox" class="box" style="display:none;grid-column:1/-1"></div>
+<div><label>Institution</label><select id="institution"></select></div>
+<div><label>Case No.</label><input id="caseNo"></div>
+<div><label>Service</label><select id="service"></select></div>
+<div><label>Vehicle</label><select id="vehicle"></select></div>
+<div><label>Driver name</label><input id="driver"></div>
+<div><label>Driver type</label><select id="driverType"><option>Salary Driver</option><option>Acting Driver</option></select></div>
+<div><label>Technician</label><input id="technicianName"></div>
+<div><label>Pickup</label><input id="pickup"></div>
+<div><label>Drop</label><input id="drop"></div>
+<div><label>Estimated round-trip KM</label><input type="number" id="distance" step="1" min="0" value="0"></div>
+<div><label>Bill entered by</label><input id="billEnteredBy" readonly placeholder="Set automatically"></div>
+</div>
+<p><b>Step 1 · Booking.</b> Fill in the patient and trip details, take any advance, then save and print the Request Form. Payment and the GST bill come later in Step 2.</p><h3>Advance taken at booking</h3><div id="advRows"></div><button class="b s" onclick="addPay('adv')">+ Advance</button>
+<h3>Additional charges (estimate)</h3><div id="chRows"></div><button class="b s" onclick="addCharge()">+ Add charge</button>
+<div class="box tot" id="sum"></div>
+<button class="b r" onclick="printDoc('req')">Save to Sheet &amp; Print Request Form</button>
+<button class="b" onclick="newTrip()">New booking</button>
+</section>
+<section class="tab" id="tc"><div id="plist"><p><b>Step 2 · Pending trips.</b> Booked trips waiting for payment. Click Payment when the trip is finished; closed trips move to Trip History.</p><input id="pq" placeholder="Search pending trips…"><div class="wrap" id="pend"></div></div>
+<div id="cform" style="display:none"><button class="b s" onclick="showClose(false)">← Back to pending trips</button>
+<div class="g"><div><label>Final round-trip KM (whole number)</label><input type="number" id="finalKm" step="1" min="0"></div>
+<div><label>Waiting hours (first 2 free)</label><input type="number" id="waitingHours" step="0.5" min="0" value="0"></div>
+<div><label>Discount / round-off (₹)</label><input type="number" id="discount" min="0" value="0"></div>
+<div><label>Bill closed by</label><input id="billClosedBy" readonly placeholder="Set automatically"></div></div><div class="box" id="tinfo"></div>
+<h3>Additional charges (final)</h3><div id="chRows2"></div><button class="b s" onclick="addCharge()">+ Add charge</button>
+<h3>Balance settlements</h3><div id="balRows"></div><button class="b s" onclick="addPay('bal')">+ Balance payment</button>
+<div class="box tot" id="sum2"></div>
+<button class="b" onclick="savePay()">Save payment (keep trip pending)</button><button class="b" onclick="if(editing){readForm();openPrint(cur,'rcp')}">Print payment receipt</button><button class="b r" onclick="closeBill()">Close Trip &amp; Print GST Invoice</button>
+<p>The GST invoice and trip closing are allowed only when the balance due is ₹0. Otherwise the trip stays in Pending Trips.</p>
+<p>Fuel and other internal expenses are added afterwards in Step 3 · Accounts.</p></div></section>
+<section class="tab" id="t1"><input id="q" placeholder="Search finished trips…"><div class="wrap" id="reg"></div></section>
+<section class="tab" id="t2"><div class="kpi" id="kpi"></div>
+<p><a target="_blank" href="https://docs.google.com/spreadsheets/d/1EFmRYk7dq7t3tWWQyPgw9n0gMot7Iar9_W4JBhX2pNg/edit">Open Google Sheet</a> · Internal expenses are never added to patient bills.</p>
+<h3>Expense vouchers</h3><div class="g">
+<div><label>Voucher no. *</label><input id="vNo"></div><div><label>Date *</label><input type="date" id="vDate"></div>
+<div><label>Category</label><select id="vCat" onchange="vToggle()"><option>Petrol / Fuel</option><option>Driver payment</option><option>Acting driver</option><option>Technician</option><option>Reference / Commission</option><option>Other</option></select></div>
+<div><label>Amount (₹) *</label><input type="number" id="vAmt" min="0"></div><div><label>Paid to / narration</label><input id="vNote"></div><div><label>Trip no. (optional)</label><input id="vTrip" placeholder="SVIMS/NOV/01"></div><div><label>Vehicle (required for fuel)</label><select id="vVeh"></select></div><div class="fuelF"><label>Odometer reading (km) *</label><input type="number" id="vOdo" min="0"></div><div class="fuelF"><label>Fuel quantity (litres) *</label><input type="number" id="vLit" min="0" step="0.01"></div><div class="fuelF"><label>Full tank fill?</label><select id="vFull"><option>Yes</option><option>No</option></select></div></div>
+<button class="b" onclick="addVoucher()">Add voucher</button> <span>The next voucher number is filled in for continuous entry.</span>
+<h3>Vouchers</h3><input id="vq" placeholder="Search vouchers (number, category, narration, trip)…"><div class="wrap" id="vList"></div>
+<h3>Daily collections &amp; net profit</h3><div class="wrap" id="ledger"></div></section>
+<section class="tab" id="t3"><div class="wrap" id="inst"></div></section>
+<section class="tab" id="t4"><div class="wrap" id="tariff"></div></section>
+<section class="tab" id="t5"><button class="b" onclick="exportJ()">Export JSON</button><button class="b" onclick="importJ()">Import JSON (from box)</button>
+<input type="file" id="jf" accept=".json" style="width:auto"><textarea id="jbox" rows="12" placeholder="Backup JSON appears here. Paste JSON and click Import to restore."></textarea></section>
+<section class="tab" id="td"><div class="g"><div><label>From</label><input type="date" id="df"></div><div><label>To</label><input type="date" id="dt"></div></div><div id="dash"></div></section>
+<section class="tab" id="ts"><div id="settings"></div></section>
+<section class="tab" id="th"><div class="g"><div><label>Quick search: mobile, name or bill no.</label><input id="hq" placeholder="Type at least 3 characters"></div></div><div class="wrap" id="hres"></div><div id="home"></div></section>
+<section class="tab" id="tr"><div class="g"><div><label>Report</label><select id="rk"><option value="gst">GST monthly register</option><option value="cash">Daily cash closing</option><option value="veh">Vehicle report (income, expenses, fuel &amp; KMPL)</option><option value="drv">Driver report</option><option value="pay">Payments register</option></select></div><div><label>From</label><input type="date" id="rf"></div><div><label>To</label><input type="date" id="rt"></div></div>
+<button class="b" onclick="renderRpt()">Show report</button><button class="b" onclick="loadRange()">Load these dates from the Sheet</button><button class="b" onclick="dlCsv()">Download CSV</button>
+<p>Only recent months are loaded by default. For older dates, click "Load these dates from the Sheet", then "Show report".</p><div id="rout"></div><textarea id="rcsv" rows="5" placeholder="CSV text appears here, copy it into Excel if the download is blocked"></textarea></section>
+</main>
+<script>
+const WEB_APP_URL="https://script.google.com/macros/s/AKfycbyXrL5GKAWUCokihxd1pSTxHw0pmxh9DVBZrskMXru5NC0Zwl2Sep95S_zSDeHcCREh/exec";
+const COLS=["serial","date","customer","phone","institution","caseNo","service","vehicle","driver","actingDriver","technicianName","technicianAmount","actDriverAmount","pickup","drop","distance","basic","waitingCharges","freezerOption","freezer","medicalSale","other","total","advance","balance","received","due","status","petrolExpense","otherExpense","referenceAmount","referenceName","referenceContact","billEnteredBy","billClosedBy"];
+let RATES={ACLS:[99,32.5,800],BLS:[40,24,350],PTAS:[35,17,150],MV:[30,16,100]};
+let FRZ={base:1500,per:13},MP={free:200,rate:16};let LOGO="";let INST=["SVIMS","PADMAVATHI","MORTUARY","EMERGENCY"];
+let VEH=["T/ AP 39 WF 6012","T/ AP 39 TP 5374","E/ AP 39 WJ 9780","E/ AP 39 WJ 3240","E/ AP 39 WJ 9776","E/ AP 39 WJ 9778","E/ KA 05 AK 3523","O/ AP 39 TD 7834","O/ AP 16 TG 9553","O/ AP 39 JJ 1917","O/ AP 07 TE 1614"];
+const SERV=["ACLS","BLS","PTAS","MV","Mahaprasthanam"];
+const MODES=["Cash","UPI","Bank Transfer","Card","Cheque"];
+const CATS=["Medicals","Freezer","Others","Cleaning Charges / Blood Stains Removal","Paramedic Charges"],frzAuto=d=>d>0?FRZ.base+Math.max(0,d-20)*FRZ.per:0,clean=v=>String(v==null?"":v).replace(/[|;=:]/g," ").trim(),PAYS=t=>[].concat((t.advRows||[]).map(x=>["A",x]),(t.balRows||[]).map(x=>["B",x])).filter(p=>n(p[1].amt)).map(p=>p[0]+"="+clean(p[1].mode)+"="+n(p[1].amt)+"="+clean(p[1].ref)+"="+clean(p[1].date||t.date)+"="+clean(p[1].by)).join(";");
+const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+const FIELDS=["date","customer","phone","institution","caseNo","service","vehicle","driver","driverType","technicianName","pickup","drop","distance","waitingHours","discount","billEnteredBy","billClosedBy"];
+const $=id=>document.getElementById(id),n=v=>Math.max(0,parseFloat(v)||0),inr=v=>"₹"+(+v).toLocaleString("en-IN",{minimumFractionDigits:0,maximumFractionDigits:2});
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let expenses=[],trips=[],cur={advRows:[],balRows:[]},editing=null;
+const today=()=>new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Kolkata"});
+function store(){try{localStorage.setItem("svims_trips",JSON.stringify(trips))}catch(e){}}
+function msg(t){$("msg").textContent=t}
+/* ---------- serial ---------- */
+function nextSerial(date){const p="SVIMS/"+MON[(+date.slice(5,7))-1]+"/";let m=0;
+ trips.forEach(t=>{if(String(t.serial).startsWith(p))m=Math.max(m,parseInt(String(t.serial).slice(p.length))||0)});
+ return p+String(m+1).padStart(2,"0")}
+/* ---------- calculation ---------- */
+function calc(t){const d=Math.floor(n(t.distance)),sv=t.service,r={lump:0,extraKm:0,extraAmt:0,waitAmt:0,frz:0,free:0};
+ if(sv==="Mahaprasthanam"){r.free=Math.min(d,MP.free);r.extraKm=Math.max(0,d-MP.free);r.extraAmt=r.extraKm*MP.rate}
+ else if(RATES[sv]&&d>0){const [a,b,w]=RATES[sv];r.lump=a*20;r.extraKm=Math.max(0,d-20);r.extraAmt=r.extraKm*b;r.waitAmt=Math.max(0,n(t.waitingHours)-2)*w}
+ r.chg=(t.charges||[]).reduce((s,c)=>s+n(c.amt),0);
+ r.basic=r.lump+r.extraAmt;
+ r.sub=r.basic+r.waitAmt+r.chg;
+ r.net=Math.max(0,r.sub-n(t.discount));
+ r.adv=(t.advRows||[]).reduce((s,x)=>s+n(x.amt),0);r.bal=(t.balRows||[]).reduce((s,x)=>s+n(x.amt),0);
+ r.rec=r.adv+r.bal;r.due=Math.max(0,r.net-r.rec);if(t.cancelled){r.sub=0;r.net=0;r.due=0}return r}
+/* ---------- form ---------- */
+function readForm(){FIELDS.forEach(f=>cur[f]=$(f).value);cur.serial=$("serial").value;return cur}
+function fillForm(){["institution","vehicle"].forEach(f=>{const v=cur[f];if(v&&![...$(f).options].some(o=>o.value===v))$(f).add(new Option(v,v))});FIELDS.forEach(f=>{$(f).value=cur[f]!=null?cur[f]:""});$("serial").value=cur.serial||"";payRows();renderCharges();lookup();upd()}
+function payRows(){["adv","bal"].forEach(k=>{const a=cur[k+"Rows"];$(k+"Rows").innerHTML=a.map((x,i)=>`<div class="pay"><select data-k="${k}" data-i="${i}" data-f="mode">${MODES.map(m=>`<option ${m===x.mode?"selected":""}>${m}</option>`).join("")}</select><input type="number" min="0" placeholder="Amount" data-k="${k}" data-i="${i}" data-f="amt" value="${esc(x.amt)}"><input placeholder="Ref" data-k="${k}" data-i="${i}" data-f="ref" value="${esc(x.ref)}"><button class="b s r" onclick="delPay('${k}',${i})">✕</button></div>`).join("")})}
+function addPay(k){cur[k+"Rows"].push({mode:"Cash",amt:"",ref:"",date:today(),by:USER?USER.name:""});payRows()}
+function delPay(k,i){cur[k+"Rows"].splice(i,1);payRows();upd()}
+function upd(){readForm();(cur.charges||[]).forEach(c=>{if(c.cat==="Freezer"&&c.auto)c.amt=frzAuto(Math.floor(n(cur.distance)))});syncCh();const r=calc(cur);
+ const H=`First 20 KM: <b>${inr(r.lump)}</b> · Above: ${r.extraKm} KM = ${inr(r.extraAmt)} · Waiting: ${inr(r.waitAmt)} · Extra charges: ${inr(r.chg)}<br>Subtotal ${inr(r.sub)} · Discount −${inr(n(cur.discount))} · Net total <b>${inr(r.net)}</b> (GST 0%) · Received ${inr(r.rec)} · Balance due <b>${inr(r.due)}</b>`;$("sum").innerHTML=H;$("sum2").innerHTML=H;if(document.activeElement.id!=="finalKm")$("finalKm").value=cur.distance||"";$("tinfo").innerHTML=`${esc(cur.serial)} · ${esc(cur.customer)} · ${esc(cur.phone)} · ${esc(cur.service)} · ${esc(cur.vehicle)}<br>${esc(cur.pickup)} → ${esc(cur.drop)} · Stage: ${cur.closed?"Closed":"Booked"}`}
+function goBooking(){if(editing)newTrip();else show(0)}
+function newTrip(stay){cur={closed:false,advRows:[],balRows:[],charges:[],date:today(),service:"ACLS",institution:INST[0],vehicle:VEH[0],driverType:"Salary Driver",distance:0,waitingHours:0,discount:0};editing=null;cur.serial=nextSerial(cur.date);fillForm();if(!stay)show(0)}
+/* ---------- row <-> trip ---------- */
+function toRow(t){const r=calc(t),o=Object.assign({},t);
+ o.basic=r.basic;o.waitingCharges=r.waitAmt;o.total=r.net;o.advance=r.adv;o.balance=r.bal;o.received=r.rec;o.due=r.due;
+ o.status=t.cancelled?"Cancelled":t.closed?"Paid":(r.rec>0?"Part-paid":"Booked");
+ const ch=t.charges||[],sc=k=>ch.filter(c=>c.cat===k).reduce((q,c)=>q+n(c.amt),0),ot={OT:sc("Others"),CL:sc(CATS[3]),PM:sc("Paramedic Charges")};
+ o.freezer=sc("Freezer");o.freezerOption=o.freezer>0?"Yes":"No";o.medicalSale=sc("Medicals");
+ o.driver=t.driverType==="Acting Driver"?"":(t.driver||"");o.actingDriver=t.driverType==="Acting Driver"?(t.driver||""):"";
+ o.other=String(ot.OT+ot.CL+ot.PM)+(n(t.discount)>0?" | Discount: "+n(t.discount):"")+(n(t.waitingHours)?" | W:"+n(t.waitingHours):"")+(ot.OT+ot.CL+ot.PM?" | C:"+Object.keys(ot).filter(k=>ot[k]).map(k=>k+"="+ot[k]).join(";"):"")+(PAYS(t)?" | P:"+PAYS(t):"")+(t.cancelled?" | X:"+clean(t.cancelReason):"");
+ const out={};COLS.forEach(c=>out[c]=o[c]==null?"":o[c]);return out}
+function fromRow(x){const t=Object.assign({},x),s=String(x.other==null?"":x.other),m=re=>{const q=s.match(re);return q?q[1]:0};
+ {const ch=[],fz=n(x.freezer)+n(m(/FR:([\d.]+)/)),cm=s.match(/C:([A-Z=\d.;]+)/);if(fz)ch.push({cat:"Freezer",amt:fz,auto:false});if(n(x.medicalSale))ch.push({cat:"Medicals",amt:n(x.medicalSale),auto:false});
+ if(cm)cm[1].split(";").forEach(q=>{const k=q.split("="),c={OT:"Others",CL:CATS[3],PM:"Paramedic Charges"}[k[0]];if(c&&n(k[1]))ch.push({cat:c,amt:n(k[1]),auto:false})});else if(parseFloat(s)>0)ch.push({cat:"Others",amt:parseFloat(s),auto:false});t.charges=ch}
+ t.driver=x.actingDriver?x.actingDriver:x.driver;t.driverType=x.actingDriver?"Acting Driver":"Salary Driver";t.discount=m(/Discount:\s*([\d.]+)/);t.waitingHours=m(/W:([\d.]+)/);
+ t.closed=String(x.status)==="Paid";t.date=String(x.date||"").slice(0,10);t.distance=n(x.distance);
+ t.advRows=n(x.advance)?[{mode:"Cash",amt:n(x.advance),ref:"",date:t.date,by:""}]:[];t.balRows=n(x.balance)?[{mode:"Cash",amt:n(x.balance),ref:"",date:t.date,by:""}]:[];
+ const pm=s.match(/P:([^|]*)/);if(pm&&pm[1].trim()){t.advRows=[];t.balRows=[];pm[1].trim().split(";").forEach(q=>{const a=q.split("="),row={mode:a[1]||"Cash",amt:n(a[2]),ref:a[3]||"",date:a[4]||t.date,by:a[5]||""};(a[0]==="A"?t.advRows:t.balRows).push(row)})}
+ const cx=s.match(/X:([^|]*)/);t.cancelled=String(x.status)==="Cancelled";t.cancelReason=cx?cx[1].trim():"";return t}
+/* ---------- sync ---------- */
+function push(t){let fr=$("hidden_sheet_sync_frame");if(!fr){fr=document.createElement("iframe");fr.name=fr.id="hidden_sheet_sync_frame";fr.style.display="none";document.body.appendChild(fr)}
+ const f=document.createElement("form");f.method="POST";f.action=WEB_APP_URL;f.target="hidden_sheet_sync_frame";f.style.display="none";
+ const i=document.createElement("input");i.type="hidden";i.name="postData";i.value=JSON.stringify(toRow(t));f.appendChild(i);document.body.appendChild(f);f.submit();setTimeout(()=>f.remove(),1500);try{fetch(WEB_APP_URL,{method:"POST",mode:"no-cors",body:new URLSearchParams({postData:JSON.stringify(toRow(t))})}).catch(()=>{})}catch(e){}msg("Sending "+t.serial+" to Sheet…");setTimeout(()=>verify(t.serial),5000)}
+function verify(s){fetch(WEB_APP_URL+"?action=has&serial="+encodeURIComponent(s)).then(r=>r.json()).then(d=>{if(d.found)msg("✔ "+s+" is in the Google Sheet");else{msg("✖ "+s+" NOT found in Sheet");alert("Saved on this device, but "+s+" did not reach the Google Sheet. Check the Apps Script: doPost must exist, and the web app must run as you with access set to Anyone.")}}).catch(()=>msg("Could not read the Sheet to confirm "+s))}
+const monthsAgo=m=>{const d=new Date(today()+"T00:00:00");d.setMonth(d.getMonth()-m);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-01"};
+const pullQ=o=>o&&o.all?"":"?since="+(o&&o.since||monthsAgo(2))+(o&&o.until?"&until="+o.until:"");
+function pull(opt){msg("Loading cloud…");fetch(WEB_APP_URL+pullQ(opt)).then(r=>r.json()).then(d=>{if(d.result!=="success")throw 0;if(d.config&&d.config.users&&d.config.users.length)loadCfg(d.config);if(Array.isArray(d.expenses)){const keep=expenses.filter(x=>!d.expenses.some(y=>String(y.voucher)===String(x.voucher)));expenses=d.expenses.map(v=>Object.assign(v,{date:String(v.date||"").slice(0,10)})).concat(keep);storeExp()}
+ const cloud=d.trips.filter(x=>String(x.status)!=="Reserved").map(fromRow),local=Object.fromEntries(trips.map(t=>[t.serial,t]));
+ cloud.forEach(c=>{const l=local[c.serial];if(l){c.advRows=l.advRows;c.balRows=l.balRows}});
+ const keep=trips.filter(t=>!cloud.some(c=>c.serial===t.serial));trips=cloud.concat(keep);store();msg("Cloud loaded ("+cloud.length+" trips)");renderAll();
+ if(!editing)cur.serial=$("serial").value=nextSerial($("date").value||today())}).catch(()=>msg("Cloud read failed — working from local copy"))}
+/* ---------- save ---------- */
+function saveCur(toast){readForm();const bad=["customer","phone","date"].filter(f=>!String(cur[f]||"").trim());
+ if(bad.length){alert("Please fill: "+bad.join(", "));return false}if(!/^\d{10}$/.test(String(cur.phone).trim())){alert("Mobile number must be exactly 10 digits");return false}{const r0=calc(cur);if(r0.rec>r0.net&&r0.net>0){alert(PAYERR(r0));return false}}
+ if(USER){if(!cur.billEnteredBy)cur.billEnteredBy=USER.name;if(cur.closed&&!cur.billClosedBy)cur.billClosedBy=USER.name}$("billEnteredBy").value=cur.billEnteredBy||"";$("billClosedBy").value=cur.billClosedBy||"";if(!editing&&!cur._resv)cur.serial=nextSerial(cur.date);$("serial").value=cur.serial;
+ const t=JSON.parse(JSON.stringify(cur)),i=trips.findIndex(x=>x.serial===t.serial);
+ if(i>=0){const o=toRow(trips[i]),w=toRow(t),ch=COLS.filter(k=>String(o[k])!==String(w[k])).map(k=>k+": "+o[k]+" → "+w[k]);if(ch.length)audit(t.closed&&!trips[i].closed?"CLOSE":"UPDATE",t.serial,ch.join("; "));trips[i]=Object.assign(trips[i],t)}else{trips.push(t);audit("CREATE",t.serial,t.customer+" · total "+calc(t).net)}
+ editing=t.serial;store();push(t);renderAll();return true}
+/* ---------- renders ---------- */
+const sum=(a,f)=>a.reduce((s,t)=>s+f(t),0),exp=t=>n(t.petrolExpense)+n(t.otherExpense)+n(t.referenceAmount)+n(t.technicianAmount)+n(t.actDriverAmount);
+function renderAll(){renderPend();renderReg();renderAcc();renderInst();renderDash();renderSettings();renderHome();upd()}
+function renderReg(){const q=$("q").value.toLowerCase(),L=trips.filter(t=>(t.closed||t.cancelled)&&(!q||[t.serial,t.customer,t.phone,t.vehicle,t.institution,t.service].join(" ").toLowerCase().includes(q))).sort((a,b)=>String(b.date).localeCompare(a.date)||String(b.serial).localeCompare(a.serial));
+ $("reg").innerHTML=`<table><tr><th>Serial</th><th>Date</th><th>Customer</th><th>Phone</th><th>Inst.</th><th>Service</th><th>Stage</th><th>KM</th><th>Total</th><th>Due</th><th>Actions</th></tr>`+L.map(t=>{const r=calc(t);return `<tr><td>${esc(t.serial)}</td><td>${esc(t.date)}</td><td>${esc(t.customer)}</td><td>${esc(t.phone)}</td><td>${esc(t.institution)}</td><td>${esc(t.service)}</td><td>${t.cancelled?"Cancelled":t.closed?"Closed":"Booked"}</td><td>${esc(t.distance)}</td><td>${inr(r.net)}</td><td>${inr(r.due)}</td><td><button class="b s" data-a="edit" data-s="${esc(t.serial)}">Edit</button><button class="b s" data-a="close" data-s="${esc(t.serial)}">Bill</button><button class="b s" data-a="req" data-s="${esc(t.serial)}">Req</button><button class="b s" data-a="inv" data-s="${esc(t.serial)}">Inv</button>${SA()?`<button class="b s r" data-a="del" data-s="${esc(t.serial)}">Delete</button>`:""}</td></tr>`}).join("")+"</table>"}
+const vSum=f=>expenses.filter(f).reduce((q,v)=>q+n(v.amount),0),vIn=(f,e)=>vSum(v=>(!f||v.date>=f)&&(!e||v.date<=e)),storeExp=()=>{try{localStorage.setItem("svims_exp",JSON.stringify(expenses))}catch(e){}};
+function nextVoucher(d){const p="VCH/"+MON[(+d.slice(5,7))-1]+"/";let m=0;expenses.forEach(v=>{if(String(v.voucher).startsWith(p))m=Math.max(m,parseInt(String(v.voucher).slice(p.length))||0)});return p+String(m+1).padStart(3,"0")}
+function vToggle(){const f=$("vCat").value==="Petrol / Fuel";document.querySelectorAll(".fuelF").forEach(e=>e.style.display=f?"":"none")}
+function vehOpts(){const v=$("vVeh").value;$("vVeh").innerHTML='<option value="">— select vehicle —</option>'+VEH.map(x=>`<option>${esc(x)}</option>`).join("");$("vVeh").value=v}
+function fuelSeg(){const by={},segs=[],V={};expenses.filter(x=>x.category==="Petrol / Fuel"&&x.vehicle&&n(x.odo)>0&&n(x.litres)>0).forEach(x=>(V[x.vehicle]=V[x.vehicle]||[]).push(x));
+ Object.keys(V).forEach(k=>{let last=null,lit=0;V[k].sort((p,q)=>n(p.odo)-n(q.odo)).forEach(x=>{lit+=n(x.litres);if(String(x.full)!=="No"){if(last!==null&&lit>0){const km=n(x.odo)-last,sg={vehicle:k,voucher:x.voucher,date:String(x.date),km:km,litres:lit,kmpl:km/lit};segs.push(sg);by[x.voucher]=sg.kmpl.toFixed(2)}last=n(x.odo);lit=0}})});return{by:by,segs:segs}}
+function addVoucher(){const fuel=$("vCat").value==="Petrol / Fuel",v={voucher:$("vNo").value.trim(),date:$("vDate").value,category:$("vCat").value,amount:n($("vAmt").value),note:$("vNote").value.trim(),trip:$("vTrip").value.trim(),by:USER?USER.name:"",vehicle:$("vVeh").value,odo:fuel?n($("vOdo").value):"",litres:fuel?n($("vLit").value):"",full:fuel?$("vFull").value:""};
+ if(!v.voucher||!v.date||!(v.amount>0))return alert("Enter a voucher number, date and an amount above 0");
+ if(fuel){if(!v.vehicle)return alert("Select the vehicle for a fuel voucher");if(!(v.odo>0))return alert("Odometer reading is required for fuel vouchers");if(!(v.litres>0))return alert("Fuel quantity (litres) is required for fuel vouchers");
+  const prev=Math.max(0,...expenses.filter(x=>x.category==="Petrol / Fuel"&&x.vehicle===v.vehicle&&x.voucher!==v.voucher).map(x=>n(x.odo)));if(v.odo<prev)return alert("Odometer ("+v.odo+") is lower than the last fuel entry for this vehicle ("+prev+"). Please check the reading.")}
+ const i=expenses.findIndex(x=>x.voucher===v.voucher);
+ const go=()=>{if(i>=0)expenses[i]=v;else expenses.push(v);storeExp();post({__expense:v});audit("VOUCHER",v.voucher,v.category+" ₹"+v.amount+(v.vehicle?" · "+v.vehicle:"")+(fuel?" · odo "+v.odo+" · "+v.litres+" L":""));["vAmt","vNote","vTrip","vOdo","vLit"].forEach(k=>$(k).value="");$("vNo").value=nextVoucher(v.date);renderAcc();msg("Voucher "+v.voucher+" saved");$("vAmt").focus()};
+ if(i>=0)ask("Voucher "+v.voucher+" already exists. Replace it?").then(ok=>{if(ok)go()});else go()}
+function delVoucher(no){ask("Delete voucher "+no+"?").then(ok=>{if(ok){audit("VOUCHER-DELETE",no,"");expenses=expenses.filter(x=>x.voucher!==no);storeExp();post({__expDelete:no});renderAcc()}})}
+function renderAcc(){const E=sum(trips,exp)+vSum(()=>true),B=sum(trips,t=>calc(t).net),C=sum(trips,t=>calc(t).rec);
+ $("kpi").innerHTML=[["Total billed",B],["Total collected",C],["Internal expenses (vouchers)",E],["Net profit (collected − expenses)",C-E]].map(x=>`<div>${x[0]}<b>${inr(x[1])}</b></div>`).join("");
+ if(!$("vNo").value)$("vNo").value=nextVoucher($("vDate").value||today());
+ const q=($("vq").value||"").toLowerCase(),V=expenses.filter(v=>!q||[v.voucher,v.category,v.note,v.trip].join(" ").toLowerCase().includes(q)).sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.voucher).localeCompare(String(a.voucher))).slice(0,300);
+ const KM=fuelSeg();$("vList").innerHTML="<table><tr><th>Voucher</th><th>Date</th><th>Category</th><th>Amount</th><th>Narration</th><th>Trip</th><th>Vehicle</th><th>Odo</th><th>Litres</th><th>KMPL</th><th>By</th><th></th></tr>"+V.map(v=>`<tr><td>${esc(v.voucher)}</td><td>${esc(v.date)}</td><td>${esc(v.category)}</td><td>${inr(n(v.amount))}</td><td>${esc(v.note)}</td><td>${esc(v.trip)}</td><td>${esc(v.vehicle)}</td><td>${v.odo||""}</td><td>${v.litres||""}</td><td>${KM.by[v.voucher]||""}</td><td>${esc(v.by)}</td><td><button class="b s r" onclick="delVoucher('${esc(v.voucher).replace(/'/g,"")}')">Delete</button></td></tr>`).join("")+`</table><p>Showing ${V.length} voucher(s) · total ${inr(V.reduce((z,v)=>z+n(v.amount),0))}</p>`;
+ const D={};trips.forEach(t=>{const k=t.date||"—";D[k]=D[k]||{c:0,e:0,k:0};D[k].c+=calc(t).rec;D[k].e+=exp(t);D[k].k++});expenses.forEach(v=>{const k=v.date||"—";D[k]=D[k]||{c:0,e:0,k:0};D[k].e+=n(v.amount)});
+ $("ledger").innerHTML="<table><tr><th>Date</th><th>Trips</th><th>Collected</th><th>Expenses</th><th>Net profit</th></tr>"+Object.keys(D).sort().reverse().map(k=>`<tr><td>${k}</td><td>${D[k].k}</td><td>${inr(D[k].c)}</td><td>${inr(D[k].e)}</td><td>${inr(D[k].c-D[k].e)}</td></tr>`).join("")+"</table>"}
+function renderInst(){$("inst").innerHTML="<table><tr><th>Institution</th><th>Trips</th><th>Billed</th><th>Collected</th><th>Due</th></tr>"+INST.map(i=>{const L=trips.filter(t=>t.institution===i&&!t.cancelled);return `<tr><td>${i}</td><td>${L.length}</td><td>${inr(sum(L,t=>calc(t).net))}</td><td>${inr(sum(L,t=>calc(t).rec))}</td><td>${inr(sum(L,t=>calc(t).due))}</td></tr>`}).join("")+"</table>"}
+function renderTariff(){$("tariff").innerHTML="<table><tr><th>Service</th><th>First 20 KM (lump sum)</th><th>Above 20 KM</th><th>Waiting / hr</th></tr>"+Object.keys(RATES).map(k=>{const a=RATES[k];return `<tr><td>${k}</td><td>${inr(a[0]*20)} (1 KME)</td><td>${inr(a[1])}/km</td><td>${inr(a[2])}</td></tr>`}).join("")+`<tr><td>Mahaprasthanam</td><td>First ${MP.free} KM free</td><td>₹${MP.rate}/km above ${MP.free} KM</td><td>None</td></tr></table>
+<ul><li>Minimum 20 KM billing on ACLS, BLS, PTAS, MV for any trip above 0 KM.</li><li>First 2 hours of waiting are free; extra hours are charged at the hourly rate.</li><li>Running freezer box: ${inr(FRZ.base)} up to 20 KM, plus ₹${FRZ.per}/km above 20 KM.</li><li>GST is charged at 0% on the ambulance service. Discount is subtracted from the subtotal.</li><li>Internal expenses never appear on patient bills.</li></ul>`}
+/* ---------- backup ---------- */
+function exportJ(){const s=JSON.stringify({trips:trips,expenses:expenses,config:cfgObj()},null,1);$("jbox").value=s;try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([s],{type:"application/json"}));a.download="svims_backup_"+today()+".json";a.click()}catch(e){}}
+function importJ(){try{const a=JSON.parse($("jbox").value),T=Array.isArray(a)?a:a.trips;if(!Array.isArray(T))throw 0;trips=T;store();if(!Array.isArray(a)&&Array.isArray(a.expenses)){expenses=a.expenses;storeExp()}if(!Array.isArray(a)&&a.config&&a.config.users&&USER.role==="superadmin"){USERS=a.config.users;if(a.config.vehicles)VEH=a.config.vehicles;if(a.config.institutions)INST=a.config.institutions;saveCfg()}renderAll();alert("Imported "+T.length+" trips. Open each and save to sync it to the sheet.")}catch(e){alert("Invalid JSON")}}
+/* ---------- printing ---------- */
+function words(x){x=Math.round(x);if(!x)return"Zero Rupees Only";const o="One Two Three Four Five Six Seven Eight Nine Ten Eleven Twelve Thirteen Fourteen Fifteen Sixteen Seventeen Eighteen Nineteen".split(" "),T=",,Twenty,Thirty,Forty,Fifty,Sixty,Seventy,Eighty,Ninety".split(",");
+ const b=v=>v<20?o[v-1]||"":T[Math.floor(v/10)]+(v%10?" "+o[v%10-1]:"");
+ const c=v=>(v>99?o[Math.floor(v/100)-1]+" Hundred"+(v%100?" ":""):"")+b(v%100);
+ let s="";[[1e7,"Crore"],[1e5,"Lakh"],[1e3,"Thousand"]].forEach(p=>{const q=Math.floor(x/p[0]);if(q){s+=c(q)+" "+p[1]+" ";x%=p[0]}});
+ return (s+(x?c(x):"")).trim()+" Rupees Only"}
+const CSS=`@page{size:A4 portrait;margin:10mm}body{font:12px/1.45 'Noto Sans Telugu',Arial,sans-serif;color:#000;margin:0}.pg{border:2px solid #000;padding:12px}.hd{display:flex;align-items:center;gap:12px;border:1px solid #000;padding:8px;margin-bottom:8px}.hd img{max-height:70px;max-width:130px}h1{font-size:19px;margin:0}h2{font-size:14px;text-align:center;margin:6px 0;border:1px solid #000;padding:4px;background:#eee}.c{text-align:center}table{border-collapse:collapse;width:100%;margin:6px 0}td,th{border:1px solid #000;padding:5px 7px;text-align:left}.r{text-align:right}.sig{display:flex;justify-content:space-between;margin-top:60px}.sig div{border-top:1px solid #000;padding-top:3px;width:30%;text-align:center}.fare{border:2px solid #000;padding:8px;margin:8px 0;font-size:14px}ol{margin:4px 0;padding-left:20px}ol li{margin-bottom:4px}.t li{font-size:11px}`;
+const head=()=>`<div class="hd">${LOGO?`<img src="${LOGO}">`:""}<div style="flex:1;text-align:center"><h1>తిరుపతి అంబులెన్స్ - TIRUPATI AMBULANCE</h1>SVIMS UNIT · 18-7-56/103, Prashanthi Nagar, Khadi Colony, Tirupati, AP - 517507<br>Mobile: 7310810821</div></div>`;
+const TERMS=[["Fare is as per the agreed tariff and is payable on completion of the trip.","ప్రయాణం ముగిసిన వెంటనే అంగీకరించిన టారిఫ్ ప్రకారం చెల్లింపు చేయాలి."],["First 20 KM is billed as a minimum lump sum.","మొదటి 20 కి.మీ. కనీస మొత్తంగా లెక్కించబడుతుంది."],["First 2 hours of waiting are free; further waiting is charged hourly.","మొదటి 2 గంటల నిరీక్షణ ఉచితం; ఆపై గంటకు ఛార్జీ వర్తిస్తుంది."],["Distance is calculated on round-trip odometer reading.","దూరం రౌండ్ ట్రిప్ ఓడోమీటర్ ప్రకారం లెక్కించబడుతుంది."],["Tolls and parking charges, if any, are extra.","టోల్, పార్కింగ్ ఛార్జీలు ఉంటే అదనం."],["Patient's belongings are the attendant's responsibility.","రోగి వస్తువులకు సహాయకులే బాధ్యులు."],["Cancellation after dispatch may attract charges.","వాహనం బయలుదేరిన తర్వాత రద్దు చేస్తే ఛార్జీలు వర్తించవచ్చు."],["Delays due to traffic, road or weather conditions are not the company's liability.","ట్రాఫిక్, రోడ్డు, వాతావరణం వల్ల ఆలస్యానికి సంస్థ బాధ్యత వహించదు."],["All disputes are subject to Tirupati jurisdiction.","అన్ని వివాదాలు తిరుపతి న్యాయపరిధికి లోబడి ఉంటాయి."]];
+function reqHTML(t,r){return `${head()}<h2>PATIENT TRANSPORT REQUEST FORM / రోగి రవాణా అభ్యర్థన పత్రం</h2>
+<table><tr><td>No: <b>${esc(t.serial)}</b></td><td>Date: ${esc(t.date)}</td></tr><tr><td>Patient: ${esc(t.customer)}</td><td>Phone: ${esc(t.phone)}</td></tr><tr><td>Institution: ${esc(t.institution)}</td><td>Case No: ${esc(t.caseNo)}</td></tr><tr><td>Service: ${esc(t.service)}</td><td>Vehicle: ${esc(t.vehicle)}</td></tr><tr><td>Pickup: ${esc(t.pickup)}</td><td>Drop: ${esc(t.drop)}</td></tr><tr><td>Driver: ${esc(t.driver)}</td><td>Approx. KM: ${esc(t.distance)}</td></tr></table>
+<div class="fare">Agreed fare / అంగీకరించిన చార్జీ: <b>${inr(r.net)}</b> &nbsp; Advance / అడ్వాన్స్: <b>${inr(r.adv)}</b> &nbsp; Due / బాకీ: <b>${inr(r.net-r.adv>0?r.net-r.adv:0)}</b></div>
+<b>Terms / నిబంధనలు</b><ol class="t">${TERMS.map(x=>`<li>${x[0]}<br>${x[1]}</li>`).join("")}</ol>
+<div class="sig"><div>Attendant / సహాయకుడు</div><div>Driver / డ్రైవర్</div><div>Supervisor / సూపర్వైజర్</div></div>`}
+function invHTML(t,r){const row=(a,b,c)=>`<tr><td>${a}</td><td class="r">${b}</td><td class="r">${c}</td></tr>`,rt=RATES[t.service],L=[];
+ if(t.service==="Mahaprasthanam"){L.push(row("Mahaprasthanam – first "+MP.free+" KM (Govt. free scheme)",r.free+" KM","₹0.00"));if(r.extraKm)L.push(row("Above "+MP.free+" KM @ ₹"+MP.rate+"/km",r.extraKm+" KM",inr(r.extraAmt)))}
+ else{if(r.lump)L.push(row(`First 20 KM (${esc(t.service)}) – lump sum`,"1 KME",inr(r.lump)));if(r.extraKm)L.push(row(`From 21 KM @ ${inr(rt[1])}/km`,r.extraKm+" KM",inr(r.extraAmt)))}
+ if(r.waitAmt)L.push(row("Waiting charges (after 2 free hours)",Math.max(0,n(t.waitingHours)-2)+" hr",inr(r.waitAmt)));
+ (t.charges||[]).filter(c=>n(c.amt)).forEach(c=>L.push(row(esc(c.cat),"",inr(n(c.amt)))));
+ const pays=[].concat((t.advRows||[]).map(x=>["Advance",x]),(t.balRows||[]).map(x=>["Balance",x])).filter(p=>n(p[1].amt)).map(p=>`${p[0]}: ${esc(p[1].mode)} ${inr(n(p[1].amt))}${p[1].ref?" (Ref "+esc(p[1].ref)+")":""}`).join("<br>");
+ return `${head()}<div class="c">GSTIN: 37AAQFT4056T1Z9 · PAN: AAQFT4056T · SAC: 999315 (Medical Transport Service)</div><h2>GST TAX INVOICE / BILL OF SUPPLY</h2>
+<table><tr><td>Invoice No: <b>${esc(t.serial)}</b></td><td>Date: ${esc(t.date)}</td></tr><tr><td>Patient: ${esc(t.customer)}</td><td>Phone: ${esc(t.phone)}</td></tr><tr><td>Vehicle: ${esc(t.vehicle)}</td><td>Institution: ${esc(t.institution)} ${esc(t.caseNo)}</td></tr><tr><td colspan="2">Route: ${esc(t.pickup)} → ${esc(t.drop)} · Distance: ${esc(t.distance)} KM</td></tr></table>
+<table><tr><th>Description</th><th class="r">Qty</th><th class="r">Amount</th></tr>${L.join("")}${row("<b>Subtotal</b>","",inr(r.sub))}${row("Discount / round-off","−"+inr(n(t.discount)),"")}${row("<b>Net Total</b>","","<b>"+inr(r.net)+"</b>")}${row("GST @ 0% (ambulance / medical transport service)","","₹0.00")}</table>
+<b>Amount in words: ${words(r.net)}</b><br>${pays?"<br>"+pays+"<br>":""}Received: ${inr(r.rec)} · Balance due: <b>${inr(r.due)}</b>
+<div class="box" style="border:1px solid #000;padding:6px;margin-top:8px">Account: TIRUPATI AMBULANCE · Federal Bank, TIRUPATI BRANCH<br>A/C No: 16830200004556 · IFSC: FDRL0001683 · UPI: TRP4556@FBL</div>
+<div class="sig"><div>Customer</div><div>Driver</div><div>Authorised Signatory</div></div>
+<h2>SERVICE FEEDBACK / సేవ అభిప్రాయం</h2><table><tr><td>1. Was the crew courteous? / సిబ్బంది మర్యాదగా ఉన్నారా?</td><td>☐ అవును / Yes &nbsp; ☐ కాదు / No</td></tr><tr><td>2. Was the vehicle clean and on time? / వాహనం శుభ్రంగా, సమయానికి వచ్చిందా?</td><td>☐ అవును / Yes &nbsp; ☐ కాదు / No</td></tr></table>`}
+function openPrint(t,kind){const r=calc(t),w=window.open("","_blank");if(!w){LASTPRINT=[t,kind];$("rp").style.display="";return alert("The booking is saved. The print window was blocked by the browser. Click Print again (top of the page), or allow pop-ups for this site.")}$("rp").style.display="none";
+ w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(t.serial)}</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Telugu&display=swap" rel="stylesheet"><style>${CSS}</style></head><body><div class="pg">${kind==="req"?reqHTML(t,r):kind==="rcp"?rcpHTML(t,r):invHTML(t,r)}</div></body></html>`);w.document.close();setTimeout(()=>{w.focus();w.print()},700)}
+let LASTPRINT=null,PRINTING=false;
+function validate(){readForm();const bad=["customer","phone","date"].filter(f=>!String(cur[f]||"").trim());if(bad.length){alert("Please fill: "+bad.join(", "));return false}if(!/^\d{10}$/.test(String(cur.phone).trim())){alert("Mobile number must be exactly 10 digits");return false}const r0=calc(cur);if(r0.rec>r0.net&&r0.net>0){alert(PAYERR(r0));return false}return true}
+async function printDoc(kind){if(PRINTING)return;PRINTING=true;try{if(!validate())return;
+ if(!editing&&!cur._resv){try{const d=await (await fetch(WEB_APP_URL+"?action=reserve&date="+cur.date)).json();if(d&&d.serial){cur.serial=d.serial;cur._resv=true;$("serial").value=d.serial}}catch(e){msg("Could not get a bill number from the Sheet; using a local number")}}
+ let ok=false;try{ok=saveCur()}catch(e){alert("Could not save: "+e.message);return}if(!ok)return;const t=trips.find(x=>x.serial===cur.serial);LASTPRINT=[t,kind];try{openPrint(t,kind)}catch(e){alert("Saved, but printing failed: "+e.message)}newTrip()}finally{PRINTING=false}}
+function loadTrip(s,tab){const t=trips.find(x=>x.serial===s);if(!t)return;cur=JSON.parse(JSON.stringify(t));cur.advRows=cur.advRows||[];cur.balRows=cur.balRows||[];cur.charges=cur.charges||[];editing=t.serial;fillForm();show(tab);showClose(tab===1)}
+function renderPend(){const q=($("pq").value||"").toLowerCase(),L=trips.filter(t=>!t.closed&&!t.cancelled&&(!q||[t.serial,t.customer,t.phone,t.vehicle,t.institution].join(" ").toLowerCase().includes(q))).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+ $("pend").innerHTML=`<table><tr><th>Serial</th><th>Date</th><th>Customer</th><th>Phone</th><th>Inst.</th><th>Service</th><th>Vehicle</th><th>Paid</th><th>Due</th><th>Actions</th></tr>`+(L.length?L.map(t=>`<tr><td>${esc(t.serial)}</td><td>${esc(t.date)}</td><td>${esc(t.customer)}</td><td>${esc(t.phone)}</td><td>${esc(t.institution)}</td><td>${esc(t.service)}</td><td>${esc(t.vehicle)}</td><td>${inr(calc(t).rec)}</td><td>${inr(calc(t).due)}</td><td><button class="b s r" data-a="close" data-s="${esc(t.serial)}">Payment</button><button class="b s" data-a="edit" data-s="${esc(t.serial)}">Edit</button><button class="b s" data-a="req" data-s="${esc(t.serial)}">Req</button><button class="b s" data-a="rcp" data-s="${esc(t.serial)}">Receipt</button><button class="b s" data-a="cancel" data-s="${esc(t.serial)}">Cancel</button>${SA()?`<button class="b s r" data-a="del" data-s="${esc(t.serial)}">Delete</button>`:""}</td></tr>`).join(""):'<tr><td colspan="10">No pending trips</td></tr>')+"</table>"}
+function showClose(on){$("plist").style.display=on?"none":"";$("cform").style.display=on?"":"none"}
+const PAYERR=(r)=>"Payments (₹"+r.rec+") are more than the bill total (₹"+r.net+"). Reduce the payment amount.";
+function savePay(){if(!editing)return alert("Select a pending trip first");readForm();const r=calc(cur);if(r.rec>r.net)return alert(PAYERR(r));if(saveCur()){msg("Payment saved. Trip stays in Pending Trips until fully paid.");newTrip(true);showClose(false)}}
+function closeBill(){if(!editing)return alert("Select a pending trip first");readForm();const r=calc(cur);if(r.rec>r.net)return alert(PAYERR(r));if(r.due>0)return alert("Payment is not complete. Balance due: ₹"+r.due+".\nThe GST invoice can be generated and the trip closed only after full payment. Use Save payment to keep the trip in Pending Trips.");cur.closed=true;if(!saveCur()){cur.closed=false;return}openPrint(trips.find(x=>x.serial===cur.serial),"inv");newTrip(true);showClose(false)}
+document.addEventListener("input",e=>{if(e.target.id==="finalKm"){$("distance").value=e.target.value;upd()}});
+/* ---------- login ---------- */
+/* Default users. Super Admin and Admin manage users, vehicles and institutions in Admin Settings; users hide Accounts, Backup, Dashboard and Settings. Passwords are stored as SHA-256 hashes of "username:password". */
+let USERS=[{name:"kishore",role:"superadmin",h:"7938b09fd98698e9ff6e12be426b6277a2f2df629cbe37a849d9a60342faf775"},{name:"pooja",role:"admin",h:"9df02fcf0823c0c9a4f976becf98db1b43a1fe9a99ce70a6269238a8ca3d57ac"},{name:"gmsvimsop",role:"user",h:"d87dff488d7cb1df8c4570a7503045f1e4a813a7177c604e2b158bf5be7d82b5"},{name:"sup1svims",role:"user",h:"24bd44bf8657d69d41d6aedfab35fc106b29a484c22113527164e05d93b67448"},{name:"sup2svims",role:"user",h:"6957c63e824e316508a2af292b92c8352bc11a52bf042a3cc221d8de9cadaa7b"},{name:"sup3svims",role:"user",h:"210c823a6b54148725e4e16a8a7c96d77b9092b52351113d0fe62763afae7280"},{name:"sup4svims",role:"user",h:"f99f8c3b7d4d764671eb06db2db41bf71eb849a69d84e5c0c30abeff95262c47"},{name:"sup5svims",role:"user",h:"f0bd7dda5a4b1bf8733b2f513de8b1bacf4c686f1696d772d90194a7f92c2fed"},{name:"sup6svims",role:"user",h:"390ef863f6f8d1fa8bb9785492f1ac634d294e61d7048e14e68adf6f2c7bbcbe"}];
+const HIDE={user:[3,6,7,8,10],admin:[],superadmin:[]},hidden=(u,i)=>(HIDE[u.role]||[]).includes(i);
+let USER=null,SAVED=null;
+/* Stay signed in until Log out is clicked (kept in localStorage, with fallbacks for embedded pages) */
+function keepUser(n){["localStorage","sessionStorage"].forEach(k=>{try{n?window[k].setItem("svims_user",n):window[k].removeItem("svims_user")}catch(e){}});try{document.cookie="svims_user="+(n?encodeURIComponent(n):"")+"; max-age="+(n?31536000:0)+"; path=/; SameSite=None; Secure"}catch(e){}SAVED=n}
+function savedUser(){let v=null;["localStorage","sessionStorage"].forEach(k=>{try{v=v||window[k].getItem("svims_user")}catch(e){}});if(!v){try{const m=document.cookie.match(/(?:^|; )svims_user=([^;]*)/);if(m)v=decodeURIComponent(m[1])}catch(e){}}return v||null}
+function setUser(u){USER=u;$("who").textContent="👤 "+u.name;$("login").style.display="none";document.querySelectorAll("#nav button").forEach(b=>b.style.display=hidden(u,+b.dataset.t)?"none":"");keepUser(u.name);show(9)}
+async function doLogin(){const nm=$("lu").value.trim().toLowerCase(),u=USERS.find(x=>x.name===nm);
+ if(!(window.crypto&&crypto.subtle)){$("le").textContent="This browser blocks secure login. Open the site over https.";return}
+ const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(nm+":"+$("lp").value)),h=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+ if(u&&h===u.h){$("lp").value="";$("lu").value="";$("le").textContent="";setUser(u)}else $("le").textContent="Wrong username or password."}
+function logout(){USER=null;keepUser(null);$("who").textContent="";$("login").style.display="flex";newTrip()}
+{let ok=false;try{localStorage.setItem("svims_t","1");ok=localStorage.getItem("svims_t")==="1"}catch(e){}$("sto").textContent=ok?"This browser can remember your sign-in.":"Sign-in cannot be remembered here (browser storage is blocked inside this page). Save the password in your browser when it asks, so it fills in next time."}
+/* ---------- config, dashboard, settings ---------- */
+const cfgObj=()=>({users:USERS,vehicles:VEH,institutions:INST,logo:LOGO,rates:RATES,frz:FRZ,mp:MP}),SA=()=>USER&&USER.role==="superadmin",LISTS={veh:()=>VEH,inst:()=>INST};
+const canEdit=u=>USER&&(USER.role==="superadmin"||(USER.role==="admin"&&u.role==="user"));
+function post(o){let fr=$("hidden_sheet_sync_frame");if(!fr){fr=document.createElement("iframe");fr.name=fr.id="hidden_sheet_sync_frame";fr.style.display="none";document.body.appendChild(fr)}
+ const f=document.createElement("form");f.method="POST";f.action=WEB_APP_URL;f.target="hidden_sheet_sync_frame";f.style.display="none";const i=document.createElement("input");i.type="hidden";i.name="postData";i.value=JSON.stringify(o);f.appendChild(i);document.body.appendChild(f);f.submit();setTimeout(()=>f.remove(),1500);
+ try{fetch(WEB_APP_URL,{method:"POST",mode:"no-cors",body:new URLSearchParams({postData:JSON.stringify(o)})}).catch(()=>{})}catch(e){}}
+function saveCfg(){try{localStorage.setItem("svims_cfg",JSON.stringify(cfgObj()))}catch(e){}post({__config:cfgObj()});msg("Settings saved & sent to Sheet");audit("SETTINGS","","users / vehicles / tariff / logo updated");applyCfg()}
+function applyCfg(){opts("institution",INST);opts("vehicle",VEH);vehOpts();renderTariff();renderInst();renderSettings()}
+function loadCfg(c){USERS=c.users;if(c.logo!==undefined)LOGO=c.logo;if(c.rates)RATES=c.rates;if(c.frz)FRZ=c.frz;if(c.mp)MP=c.mp;if(c.vehicles&&c.vehicles.length)VEH=c.vehicles;if(c.institutions&&c.institutions.length)INST=c.institutions;try{localStorage.setItem("svims_cfg",JSON.stringify(cfgObj()))}catch(e){}
+ if(USER){const nu=USERS.find(x=>x.name===USER.name);if(!nu){logout();return}USER=nu;document.querySelectorAll("#nav button").forEach(b=>b.style.display=hidden(USER,+b.dataset.t)?"none":"")}applyCfg();if(!USER&&SAVED){const ru=USERS.find(x=>x.name===SAVED);if(ru)setUser(ru)}}
+async function hashPw(nm,pw){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(nm+":"+pw));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+const nSA=()=>USERS.filter(x=>x.role==="superadmin").length;
+async function addUser(){const nm=$("nu").value.trim().toLowerCase(),pw=$("npw").value,r=$("nr").value;
+ if(!/^[a-z0-9_.-]{3,}$/.test(nm))return alert("Username: at least 3 characters, letters/numbers only, no spaces");if(pw.length<6)return alert("Password must be at least 6 characters");
+ if(USERS.some(u=>u.name===nm))return alert("That username already exists");if(USER.role!=="superadmin"&&r!=="user")return alert("Admins can only add users");
+ USERS.push({name:nm,role:r,h:await hashPw(nm,pw)});saveCfg()}
+async function saveUser(i){const u=USERS[i];if(!canEdit(u))return;const pw=$("up"+i).value,r=$("ur"+i)?$("ur"+i).value:u.role;
+ if(u.role==="superadmin"&&r!=="superadmin"&&nSA()<2)return alert("Keep at least one Super Admin");if(pw){if(pw.length<6)return alert("Password must be at least 6 characters");u.h=await hashPw(u.name,pw)}
+ if(USER.role==="superadmin")u.role=r;saveCfg()}
+function delUser(i){const u=USERS[i];if(!canEdit(u))return;if(u.name===USER.name)return alert("You cannot delete your own account");if(u.role==="superadmin"&&nSA()<2)return alert("Keep at least one Super Admin");ask("Delete user "+u.name+"?").then(ok=>{if(ok){USERS.splice(i,1);saveCfg()}})}
+function lAdd(k){const L=LISTS[k](),v=$("n"+k).value.trim();if(v&&!L.includes(v)){L.push(v);saveCfg()}}
+function lSave(k,i){const v=$("l"+k+i).value.trim();if(v){LISTS[k]()[i]=v;saveCfg()}}
+function lDel(k,i){const L=LISTS[k]();if(L.length>1)ask("Remove "+L[i]+" from the list? Past trips keep their value.").then(ok=>{if(ok){L.splice(i,1);saveCfg()}})}
+function listBlock(k,L,t){return `<h3>${t}</h3><table>`+L.map((v,i)=>`<tr><td><input id="l${k}${i}" value="${esc(v)}"></td><td style="width:150px"><button class="b s" onclick="lSave('${k}',${i})">Save</button><button class="b s r" onclick="lDel('${k}',${i})">Remove</button></td></tr>`).join("")+`<tr><td><input id="n${k}" placeholder="Add new"></td><td><button class="b s" onclick="lAdd('${k}')">Add</button></td></tr></table>`}
+function renderSettings(){if(!USER||USER.role==="user"||!$("settings"))return;const sa=USER.role==="superadmin";
+ $("settings").innerHTML=`<h3>Users</h3><div class="wrap"><table><tr><th>Username</th><th>Role</th><th>New password (blank = keep)</th><th></th></tr>`+USERS.map((u,i)=>{const e=canEdit(u);return `<tr><td>${esc(u.name)}</td><td>${e&&sa?`<select id="ur${i}">${["user","admin","superadmin"].map(r=>`<option ${r===u.role?"selected":""}>${r}</option>`).join("")}</select>`:u.role}</td><td>${e?`<input id="up${i}" type="password" autocomplete="new-password">`:""}</td><td>${e?`<button class="b s" onclick="saveUser(${i})">Save</button><button class="b s r" onclick="delUser(${i})">Delete</button>`:""}</td></tr>`}).join("")+`<tr><td><input id="nu" placeholder="new username"></td><td><select id="nr">${(sa?["user","admin","superadmin"]:["user"]).map(r=>`<option>${r}</option>`).join("")}</select></td><td><input id="npw" type="password" placeholder="password (min 6)" autocomplete="new-password"></td><td><button class="b s" onclick="addUser()">Add user</button></td></tr></table></div><p>To rename a user, add a new one and delete the old one.</p>`+listBlock("veh",VEH,"Vehicles")+listBlock("inst",INST,"Institutions")+tariffBlock()+logoBlock()+auditBlock()}
+let AUD="";
+function tariffBlock(){if(!SA())return "";const rows=Object.keys(RATES).map((k,i)=>`<tr><td>${esc(k)}</td>${RATES[k].map((v,j)=>`<td><input type="number" step="0.5" id="tf${i}_${j}" value="${v}"></td>`).join("")}</tr>`).join("");
+ return `<h3>Tariff (Super Admin)</h3><div class="wrap"><table><tr><th>Service</th><th>Per KM, first 20 KM</th><th>Per KM above 20 KM</th><th>Waiting per hour</th></tr>${rows}</table></div><div class="g"><div><label>Freezer base (₹, up to 20 KM)</label><input type="number" id="tfb" value="${FRZ.base}"></div><div><label>Freezer per KM above 20</label><input type="number" id="tfp" value="${FRZ.per}"></div><div><label>Mahaprasthanam free KM</label><input type="number" id="tmf" value="${MP.free}"></div><div><label>Mahaprasthanam rate per KM after</label><input type="number" id="tmr" value="${MP.rate}"></div></div><button class="b" onclick="saveTariff()">Save tariff</button><p>New rates apply to bills saved from now on. Old trips are recalculated when opened and saved again.</p>`}
+function saveTariff(){if(!SA())return;const R={};Object.keys(RATES).forEach((k,i)=>{R[k]=[0,1,2].map(j=>n($("tf"+i+"_"+j).value))});RATES=R;FRZ={base:n($("tfb").value),per:n($("tfp").value)};MP={free:n($("tmf").value),rate:n($("tmr").value)};audit("TARIFF","",JSON.stringify({RATES:RATES,FRZ:FRZ,MP:MP}));saveCfg();upd()}
+function auditBlock(){return `<h3>Audit log</h3><button class="b" onclick="loadAudit()">Load latest 300 entries</button><div class="wrap">${AUD}</div>`}
+function loadAudit(){fetch(WEB_APP_URL+"?action=audit").then(r=>r.json()).then(d=>{AUD="<table><tr><th>When</th><th>Who</th><th>Action</th><th>Ref</th><th>Details</th></tr>"+(d.audit||[]).map(a=>`<tr><td>${esc(a.at)}</td><td>${esc(a.by)}</td><td>${esc(a.action)}</td><td>${esc(a.ref)}</td><td>${esc(a.detail)}</td></tr>`).join("")+"</table>";renderSettings()}).catch(()=>alert("Could not load the audit log. Update the Apps Script first."))}
+function logoBlock(){return `<h3>Logo (printed on request forms and bills)</h3>${LOGO?`<img src="${LOGO}" style="max-height:80px;display:block;margin:6px 0">`:"<p>No logo uploaded yet.</p>"}<input type="file" accept="image/*" onchange="logoUp(this)" style="width:auto">${LOGO?` <button class="b s r" onclick="logoDel()">Remove logo</button>`:""}`}
+function logoUp(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{let w=Math.min(300,im.width),q=.85,d;const c=document.createElement("canvas");do{c.width=w;c.height=Math.round(im.height*w/im.width);const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(im,0,0,c.width,c.height);d=c.toDataURL("image/jpeg",q);q-=.1;w=Math.round(w*.9)}while(d.length>35000&&q>.2);LOGO=d;saveCfg()};im.src=r.result};r.readAsDataURL(f)}
+function logoDel(){LOGO="";saveCfg()}
+function renderHome(){if(!USER||!$("home"))return;const pend=trips.filter(t=>!t.closed&&!t.cancelled).length,td=today(),tb=trips.filter(t=>t.date===td).length;
+ const T=[[0,"📋","New Booking","Take a booking and print the request form"],[1,"💳","Payments & GST Bill",pend+" pending trip"+(pend===1?"":"s")],[2,"📁","Trip History","Finished trips and invoices"],[3,"🧾","Accounts & Vouchers","Expense vouchers and daily profit"],[7,"📊","Dashboard","Trips, collections and profit"],[10,"📑","Reports","GST register, cash closing, vehicle & fuel"],[4,"🏥","Institution Summary",""],[5,"₹","Tariff & Rules",""],[6,"💾","Backup & Restore",""],[8,"⚙️","Admin Settings","Users, vehicles, logo"]].filter(x=>!hidden(USER,x[0]));
+ $("home").innerHTML=`<p style="font-size:16px">Welcome, <b>${esc(USER.name)}</b>. Today: ${tb} booking${tb===1?"":"s"} · ${pend} pending payment${pend===1?"":"s"}.</p><div class="tiles">`+T.map(x=>`<button class="tile" onclick="${x[0]===0?"goBooking()":"show("+x[0]+")"}"><span>${x[1]}</span><b>${x[2]}</b><small>${x[3]}</small></button>`).join("")+"</div>"}
+const grp=(L,key,lab)=>{const G={};L.forEach(t=>{const k=key(t)||"—";(G[k]=G[k]||[]).push(t)});return `<h3>${lab}</h3><div class="wrap"><table><tr><th>${lab}</th><th>Trips</th><th>KM</th><th>Billed</th><th>Collected</th><th>Expenses</th></tr>`+Object.keys(G).sort().map(k=>{const a=G[k];return `<tr><td>${esc(k)}</td><td>${a.length}</td><td>${sum(a,t=>n(t.distance))}</td><td>${inr(sum(a,t=>calc(t).net))}</td><td>${inr(sum(a,t=>calc(t).rec))}</td><td>${inr(sum(a,exp))}</td></tr>`}).join("")+"</table></div>"};
+function renderDash(){if(!USER||USER.role==="user"||!$("dash"))return;const f=$("df").value,e=$("dt").value,L=trips.filter(t=>!t.cancelled&&(!f||t.date>=f)&&(!e||t.date<=e)),C=L.filter(t=>t.closed);
+ const K=[["Trips booked",L.length],["Closed",C.length],["Pending (all dates)",trips.filter(t=>!t.closed&&!t.cancelled).length],["Total KM",sum(L,t=>n(t.distance))],["Billed",inr(sum(C,t=>calc(t).net))],["Collected",inr(sum(L,t=>calc(t).rec))],["Due on closed trips",inr(sum(C,t=>calc(t).due))],["Expenses",inr(sum(L,exp)+vIn(f,e))],["Net profit",inr(sum(L,t=>calc(t).rec)-sum(L,exp)-vIn(f,e))]];
+ const days=[...Array(7)].map((_,i)=>new Date(Date.now()-i*864e5).toLocaleDateString("en-CA",{timeZone:"Asia/Kolkata"})).reverse(),v=days.map(d=>sum(trips.filter(t=>t.date===d),t=>calc(t).rec)),mx=Math.max(1,...v);
+ $("dash").innerHTML=`<div class="kpi" style="margin-top:12px">${K.map(x=>`<div>${x[0]}<b>${x[1]}</b></div>`).join("")}</div><h3>Collections, last 7 days</h3><div style="display:flex;align-items:flex-end;gap:8px;height:120px">${days.map((d,i)=>`<div style="flex:1;text-align:center;font-size:11px"><div style="background:var(--red);height:${Math.round(v[i]/mx*80)}px"></div>${inr(v[i])}<br>${d.slice(5)}</div>`).join("")}</div>`+grp(L,t=>t.service,"Service")+grp(L,t=>t.vehicle,"Vehicle")+grp(L,t=>t.institution,"Institution")+grp(L,t=>t.billEnteredBy,"Entered by")}
+document.addEventListener("input",e=>{if(e.target.id==="df"||e.target.id==="dt")renderDash()});
+/* ---------- in-page dialogs (alert/confirm are blocked inside Google Sites) ---------- */
+function dlg(text,mode){return new Promise(res=>{const o=document.createElement("div");o.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:center;justify-content:center";
+ o.innerHTML='<div style="background:#fff;padding:20px;border-radius:8px;max-width:440px;width:90%"><p style="white-space:pre-wrap;margin:0 0 10px"></p><input style="display:none;margin-bottom:12px"><div style="text-align:right"></div></div>';o.querySelector("p").textContent=text;
+ const inp=o.querySelector("input"),bx=o.firstChild.lastChild;if(mode===2){inp.style.display="";setTimeout(()=>inp.focus(),50)}
+ const mk=(t,v,c)=>{const b=document.createElement("button");b.className="b"+(c?" r":"");b.textContent=t;b.onclick=()=>{o.remove();res(mode===2&&v?inp.value:v)};bx.appendChild(b)};
+ if(mode)mk("Cancel",mode===2?null:false);mk("OK",true,true);document.body.appendChild(o)})}
+window.alert=t=>{dlg(String(t),0)};const ask=t=>dlg(String(t),1),askText=t=>dlg(String(t),2);
+window.addEventListener("error",e=>{msg("Error: "+e.message)});
+/* ---------- reports ---------- */
+let RPT={t:"",h:[],r:[]};const f2=v=>(Math.round(n(v)*100)/100).toFixed(2),inR=(d,f,e)=>(!f||String(d)>=f)&&(!e||String(d)<=e);
+function showRpt(t,h,r,extra){RPT={t:t,h:h,r:r};$("rout").innerHTML=`<h3>${esc(t)}</h3>${extra||""}<div class="wrap"><table><tr>${h.map(x=>`<th>${esc(x)}</th>`).join("")}</tr>${r.map(x=>`<tr>${x.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</table></div>`;
+ $("rcsv").value=[h].concat(r).map(x=>x.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n")}
+function payRowsAll(f,e){const o=[];trips.forEach(t=>[["Advance",t.advRows],["Balance",t.balRows]].forEach(k=>(k[1]||[]).forEach(x=>{if(n(x.amt)>0&&inR(x.date||t.date,f,e))o.push({d:x.date||t.date,t:t,kind:k[0],mode:x.mode,amt:n(x.amt),ref:x.ref||"",by:x.by||""})})));return o}
+function renderRpt(){const k=$("rk").value,f=$("rf").value,e=$("rt").value,rng=" ("+f+" to "+e+")";
+ if(k==="gst"){const L=trips.filter(t=>t.closed&&!t.cancelled&&inR(t.date,f,e)).sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.serial).localeCompare(String(b.serial))),T=sum(L,t=>calc(t).net);
+  showRpt("GST sales register"+rng,["Invoice no","Date","Customer","Service","SAC","Taxable value","GST rate","GST amount","Invoice total"],L.map(t=>[t.serial,t.date,t.customer,t.service,"999315",f2(calc(t).net),"0%","0.00",f2(calc(t).net)]).concat([["TOTAL","","","","",f2(T),"","0.00",f2(T)]]),`<p>Invoices: <b>${L.length}</b> · Taxable value (GST at 0%): <b>${inr(T)}</b> · GST payable: <b>₹0</b>. Only closed (fully paid) trips with a GST invoice are included. Please confirm the filing format with your CA.</p>`)}
+ else if(k==="cash"){const P=payRowsAll(f,e),M=["Cash","UPI","Bank Transfer","Card","Cheque"],G={},S={};
+  P.forEach(x=>{const a=G[x.d]=G[x.d]||{};a[x.mode]=(a[x.mode]||0)+x.amt;const b=S[x.by||"(unknown)"]=S[x.by||"(unknown)"]||{};b[x.mode]=(b[x.mode]||0)+x.amt});
+  const row=(l,a,ex)=>[l].concat(M.map(m=>f2(a[m]||0)),[f2(M.reduce((q,m)=>q+(a[m]||0),0)),ex==null?"":f2(ex)]);
+  showRpt("Daily cash closing"+rng,["Date / staff"].concat(M,["Total collected","Expenses (vouchers)"]),Object.keys(G).sort().map(d=>row(d,G[d],vIn(d,d))).concat([["— By staff —","","","","","","",""]],Object.keys(S).sort().map(u=>row("Staff: "+u,S[u],null))),"<p>Collections are grouped by payment date. Staff is the person who entered the payment.</p>")}
+ else if(k==="veh"){const L=trips.filter(t=>!t.cancelled&&inR(t.date,f,e)),X=expenses.filter(v=>inR(v.date,f,e)),SG=fuelSeg().segs.filter(g=>inR(g.date,f,e)),names=[...new Set(VEH.concat(L.map(t=>t.vehicle),X.map(v=>v.vehicle)).filter(Boolean))];
+  showRpt("Vehicle report"+rng,["Vehicle","Trips","Trip KM","Billed","Collected","Fuel (litres)","Fuel cost","Other expenses","Avg KMPL","Last odometer"],names.map(v=>{const a=L.filter(t=>t.vehicle===v),fu=X.filter(q=>q.vehicle===v&&q.category==="Petrol / Fuel"),ot=X.filter(q=>q.vehicle===v&&q.category!=="Petrol / Fuel"),sg=SG.filter(g=>g.vehicle===v),lit=sum(sg,g=>g.litres),km=sum(sg,g=>g.km),od=Math.max(0,...expenses.filter(q=>q.vehicle===v&&n(q.odo)>0).map(q=>n(q.odo)));
+   return [v,a.length,sum(a,t=>n(t.distance)),f2(sum(a.filter(t=>t.closed),t=>calc(t).net)),f2(sum(a,t=>calc(t).rec)),f2(sum(fu,q=>n(q.litres))),f2(sum(fu,q=>n(q.amount))),f2(sum(ot,q=>n(q.amount))),lit>0?(km/lit).toFixed(2):"–",od||"–"]}),"<p>KMPL is worked out between consecutive full-tank fills using the odometer and litres from fuel vouchers. A vehicle needs at least two full-tank fills in the loaded data to show an average.</p>")}
+ else if(k==="drv"){const L=trips.filter(t=>!t.cancelled&&inR(t.date,f,e)),G={};L.forEach(t=>{const key=(t.driver||"(not entered)")+"|"+(t.driverType||"");(G[key]=G[key]||[]).push(t)});
+  showRpt("Driver report"+rng,["Driver","Type","Trips","KM","Billed (closed trips)"],Object.keys(G).sort().map(q=>{const a=G[q],d=q.split("|");return [d[0],d[1],a.length,sum(a,t=>n(t.distance)),f2(sum(a.filter(t=>t.closed),t=>calc(t).net))]}))}
+ else{const P=payRowsAll(f,e).sort((a,b)=>String(a.d).localeCompare(String(b.d)));showRpt("Payments register"+rng,["Date","Trip no","Customer","Type","Mode","Amount","Reference","Entered by"],P.map(x=>[x.d,x.t.serial,x.t.customer,x.kind,x.mode,f2(x.amt),x.ref,x.by]).concat([["TOTAL","","","","",f2(sum(P,x=>x.amt)),"",""]]))}}
+function loadRange(){pull({since:$("rf").value,until:$("rt").value});msg("Loading "+$("rf").value+" to "+$("rt").value+" from the Sheet…")}
+function dlCsv(){try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([$("rcsv").value],{type:"text/csv"}));a.download=(RPT.t||"report").replace(/\W+/g,"_")+".csv";a.click()}catch(e){alert("Download blocked. Copy the text from the box below instead.")}}
+/* ---------- receipt, home search ---------- */
+function rcpHTML(t,r){const P=[].concat((t.advRows||[]).map(x=>["Advance",x]),(t.balRows||[]).map(x=>["Balance",x])).filter(p=>n(p[1].amt));
+ return `${head()}<h2>PAYMENT RECEIPT / చెల్లింపు రసీదు</h2><table><tr><td>Trip / bill no: <b>${esc(t.serial)}</b></td><td>Date: ${esc(t.date)}</td></tr><tr><td>Patient: ${esc(t.customer)}</td><td>Phone: ${esc(t.phone)}</td></tr><tr><td colspan="2">Route: ${esc(t.pickup)} → ${esc(t.drop)} · Vehicle: ${esc(t.vehicle)}</td></tr></table>
+<table><tr><th>Type</th><th>Date</th><th>Mode</th><th>Reference</th><th class="r">Amount</th></tr>${P.map(p=>`<tr><td>${p[0]}</td><td>${esc(p[1].date||t.date)}</td><td>${esc(p[1].mode)}</td><td>${esc(p[1].ref)}</td><td class="r">${inr(n(p[1].amt))}</td></tr>`).join("")}</table>
+<p>Total bill: <b>${inr(r.net)}</b> · Received: <b>${inr(r.rec)}</b> · Balance due: <b>${inr(r.due)}</b></p><b>Received: ${words(r.rec)}</b><div class="sig"><div>Customer</div><div>Received by ${esc(USER?USER.name:"")}</div><div>Authorised Signatory</div></div>`}
+function homeSearch(){const q=$("hq").value.trim().toLowerCase();if(q.length<3){$("hres").innerHTML="";return}if(/^\d{10}$/.test(q))remotePhone(q);
+ const L=trips.filter(t=>[t.serial,t.customer,t.phone,t.vehicle].join(" ").toLowerCase().includes(q)).slice(0,30);
+ $("hres").innerHTML="<table><tr><th>Serial</th><th>Date</th><th>Customer</th><th>Phone</th><th>Stage</th><th>Total</th><th>Due</th><th></th></tr>"+L.map(t=>{const r=calc(t),sn=esc(t.serial);return `<tr><td>${sn}</td><td>${esc(t.date)}</td><td>${esc(t.customer)}</td><td>${esc(t.phone)}</td><td>${t.cancelled?"Cancelled":t.closed?"Closed":"Booked"}</td><td>${inr(r.net)}</td><td>${inr(r.due)}</td><td><button class="b s" data-a="edit" data-s="${sn}">Open</button>${!t.closed&&!t.cancelled?`<button class="b s r" data-a="close" data-s="${sn}">Payment</button>`:""}${t.closed?`<button class="b s" data-a="inv" data-s="${sn}">Inv</button>`:""}<button class="b s" data-a="req" data-s="${sn}">Req</button><button class="b s" data-a="rcp" data-s="${sn}">Receipt</button></td></tr>`}).join("")+(L.length?"":'<tr><td colspan="8">No match in the loaded trips</td></tr>')+"</table>"}
+/* ---------- audit, cancel, remote lookup ---------- */
+function audit(action,ref,detail){try{post({__audit:{by:USER?USER.name:"",action:action,ref:ref,detail:String(detail||"").slice(0,900)}})}catch(e){}}
+function cancelTrip(sn){const t=trips.find(x=>x.serial===sn);if(!t)return;const rc=calc(t).rec;askText("Reason for cancelling "+sn+" ("+t.customer+")?"+(rc>0?"\nAdvance received: "+inr(rc)+". Record any refund as an expense voucher.":"")).then(rs=>{if(rs===null)return;t.cancelled=true;t.cancelReason=rs||"Cancelled";store();push(t);audit("CANCEL",sn,t.cancelReason);renderAll()})}
+let REM={};function remotePhone(ph){if(REM[ph])return;REM[ph]=1;fetch(WEB_APP_URL+"?action=phone&phone="+ph).then(r=>r.json()).then(d=>{if(d.trips&&d.trips.length){d.trips.map(fromRow).forEach(t=>{if(!trips.some(x=>x.serial===t.serial))trips.push(t)});store();lookup();if($("hq").value)homeSearch()}}).catch(()=>{})}
+/* ---------- charges, repeat customers ---------- */
+function clampPay(row,el){readForm();const net=calc(cur).net;if(net>0){const oth=["advRows","balRows"].reduce((q,k)=>q+cur[k].reduce((z,x)=>z+(x===row?0:n(x.amt)),0),0),mx=Math.max(0,net-oth);if(n(row.amt)>mx){row.amt=mx;el.value=mx;msg("Payment limited to the balance due (₹"+mx+")")}}}
+function renderCharges(){const h=(cur.charges||[]).map((c,i)=>`<div class="pay"><select class="chcat" data-i="${i}">${CATS.map(x=>`<option ${x===c.cat?"selected":""}>${x}</option>`).join("")}</select><input type="number" min="0" class="chamt" data-i="${i}" value="${esc(c.amt)}" placeholder="Amount ₹"><span>${c.cat==="Freezer"&&c.auto?"standard rate, editable":""}</span><button class="b s r" data-chdel="${i}">✕</button></div>`).join("");["chRows","chRows2"].forEach(id=>$(id).innerHTML=h)}
+function addCharge(){cur.charges=cur.charges||[];cur.charges.push({cat:CATS[0],amt:"",auto:false});renderCharges();upd()}
+function syncCh(){document.querySelectorAll(".chamt").forEach(el=>{const c=(cur.charges||[])[+el.dataset.i];if(c&&document.activeElement!==el&&String(el.value)!==String(c.amt))el.value=c.amt})}
+function lookup(){const b=$("profBox"),ph=$("phone").value;if(editing||!/^\d{10}$/.test(ph)){b.style.display="none";return}
+ const L=trips.filter(t=>String(t.phone)===ph).sort((x,y)=>String(y.date).localeCompare(String(x.date))||String(y.serial).localeCompare(String(x.serial)));if(!L.length){b.style.display="none";remotePhone(ph);return}
+ const seen={},P=[],key=t=>String(t.customer).trim().toLowerCase();L.forEach(t=>{if(key(t)&&!seen[key(t)]){seen[key(t)]=1;P.push(t)}});b._P=P;b.style.display="";
+ b.innerHTML=`<b>${P.length>1?"This number has "+P.length+" patient profiles":"Repeat customer"}. Select the patient:</b><br>`+P.map((t,i)=>`<button class="b s" data-prof="${i}">${esc(t.customer)} (${L.filter(x=>key(x)===key(t)).length} trips)</button>`).join("")+`<button class="b s r" data-prof="new">+ New name</button>`;
+ if(P.length===1&&!$("customer").value.trim())pickProf(0)}
+function pickProf(i){const t=$("profBox")._P[i];if(!t)return;$("customer").value=t.customer;if(t.institution&&INST.includes(t.institution))$("institution").value=t.institution;["pickup","drop"].forEach(f=>{if(!$(f).value.trim())$(f).value=t[f]||""});upd()}
+document.addEventListener("input",e=>{const el=e.target;if(el.classList.contains("chamt")){const c=cur.charges[+el.dataset.i];c.amt=el.value;c.auto=false;upd()}if(el.id==="vq")renderAcc();if(el.id==="hq")homeSearch();if(el.id==="phone"){el.value=el.value.replace(/\D/g,"").slice(0,10);lookup()}});
+document.addEventListener("change",e=>{const el=e.target;if(el.classList.contains("chcat")){const c=cur.charges[+el.dataset.i];c.cat=el.value;if(c.cat==="Freezer"){c.auto=true;c.amt=frzAuto(Math.floor(n(cur.distance)))}else{c.auto=false;c.amt=0}renderCharges();upd()}});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-prof]");if(b){if(b.dataset.prof==="new"){$("customer").value="";$("customer").focus()}else pickProf(+b.dataset.prof)}const c=e.target.closest("[data-chdel]");if(c){cur.charges.splice(+c.dataset.chdel,1);renderCharges();upd()}});
+/* ---------- tabs & events ---------- */
+const NAMES=["1 · Booking & Request","2 · Payment & GST Bill","Trip History","3 · Accounts & Expenses","Institution Summary","Tariff & Rules","Backup & Restore","Dashboard","Admin Settings","Home","Reports"];
+function show(i){if(USER&&hidden(USER,i))return;if(i===1)showClose(false);document.querySelectorAll(".tab").forEach((e,j)=>e.classList.toggle("on",i===j));document.querySelectorAll("#nav button").forEach(e=>e.classList.toggle("on",+e.dataset.t===i));if(i)renderAll()}
+function opts(id,a){const v=$(id).value;$(id).innerHTML=a.map(x=>`<option>${esc(x)}</option>`).join("");if(a.includes(v))$(id).value=v}
+document.addEventListener("input",e=>{const d=e.target.dataset;if(d&&d.k){const row=cur[d.k+"Rows"][d.i];row[d.f]=e.target.value;if(d.f==="amt")clampPay(row,e.target);upd();return}if(FIELDS.includes(e.target.id)){if(e.target.id==="date"&&!editing)$("serial").value=nextSerial(e.target.value||today());upd()}if(e.target.id==="q")renderReg();if(e.target.id==="pq")renderPend()});
+document.addEventListener("change",e=>{const d=e.target.dataset;if(d&&d.k){cur[d.k+"Rows"][d.i][d.f]=e.target.value;upd()}else if(FIELDS.includes(e.target.id)){if(e.target.id==="date"&&!editing)$("serial").value=nextSerial(e.target.value||today());upd()}});
+const rowClick=e=>{const b=e.target.closest("button");if(!b)return;const t=trips.find(x=>x.serial===b.dataset.s);if(!t)return;
+ if(b.dataset.a==="edit")loadTrip(t.serial,0);else if(b.dataset.a==="close")loadTrip(t.serial,1);else if(b.dataset.a==="cancel")cancelTrip(t.serial)
+ else if(b.dataset.a==="del"){if(!SA())return alert("Only the Super Admin can delete trips.");ask("Delete "+t.serial+" from this device? (The Google Sheet row is not removed.)").then(ok=>{if(ok){trips=trips.filter(x=>x!==t);store();renderAll()}})}
+ else openPrint(t,b.dataset.a)};$("reg").addEventListener("click",rowClick);$("pend").addEventListener("click",rowClick);$("hres").addEventListener("click",rowClick);
+$("jf").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$("jbox").value=r.result;importJ()};r.readAsText(f)});
+const ORDER=[9,0,1,2,7,10,3,4,5,6,8];$("nav").innerHTML=ORDER.map(i=>`<button data-t="${i}" onclick="${i===0?"goBooking()":"show("+i+")"}">${NAMES[i]}</button>`).join("");
+try{expenses=JSON.parse(localStorage.getItem("svims_exp")||"[]")}catch(e){}
+try{const c=JSON.parse(localStorage.getItem("svims_cfg")||"null");if(c&&c.users&&c.users.length){USERS=c.users;if(c.logo)LOGO=c.logo;if(c.rates)RATES=c.rates;if(c.frz)FRZ=c.frz;if(c.mp)MP=c.mp;if(c.vehicles&&c.vehicles.length)VEH=c.vehicles;if(c.institutions&&c.institutions.length)INST=c.institutions}}catch(e){}
+opts("institution",INST);opts("vehicle",VEH);opts("service",SERV);renderTariff();
+$("rf").value=today().slice(0,8)+"01";$("rt").value=today();vehOpts();vToggle();$("vDate").value=today();$("df").value=today().slice(0,8)+"01";$("dt").value=today();
+try{trips=JSON.parse(localStorage.getItem("svims_trips")||"[]")}catch(e){trips=[]}
+newTrip();show(0);pull();
+{SAVED=savedUser();const ru=USERS.find(x=>x.name===SAVED);if(ru)setUser(ru)}
+if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script></body></html>
